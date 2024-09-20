@@ -5,7 +5,7 @@ import { Textarea } from "@/components/ui/textarea";
 export default function ChannelPage() {
     return (
         <div className="flex flex-col justify-evenly h-full">
-            <header className="h-14 border-b">
+            <header className="py-4 border-b">
 
             </header>
             <div className="h-full">

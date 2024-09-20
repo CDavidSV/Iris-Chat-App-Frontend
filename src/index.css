@@ -66,3 +66,17 @@
     @apply bg-background text-foreground;
   }
 }
+
+.loader {
+  height: 4px;
+  width: 100%;
+  --c:no-repeat linear-gradient(#11c3dee6 0 0);
+  background: var(--c),var(--c),#11c3de33;
+  background-size: 60% 100%;
+  animation: l16 2.5s infinite;
+}
+@keyframes l16 {
+  0%   {background-position:-150% 0,-150% 0}
+  66%  {background-position: 250% 0,-150% 0}
+  100% {background-position: 250% 0, 250% 0}
+}

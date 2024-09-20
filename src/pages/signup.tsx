@@ -1,16 +1,19 @@
-import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form, FormDescription } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { useContext } from "react";
 import { useForm } from "react-hook-form";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { z } from "zod";
-import { APIContext } from "../contexts/apiContext";
+import { useAuth } from "../contexts/apiContext";
+import { ButtonLoader } from "@/components/ui/buttonLoader";
+import { useState } from "react";
 
 export default function SignupPage() {
-    const { signup } = useContext(APIContext);
+    const { signup } = useAuth();
+    const redirect = useNavigate();
+
+    const [signupLoading, setSignupLoading] = useState(false);
 
     const signupFormSchema = z.object({
         email: z.string().email(),
@@ -33,9 +36,33 @@ export default function SignupPage() {
     });
 
     const onSubmit = async (values: z.infer<typeof signupFormSchema>) => {
+        setSignupLoading(true);
         const signupRes = await signup(values.email, values.username, values.password);
+        setSignupLoading(false);
 
-        console.log(signupRes);
+        if (signupRes) { // An error occurred server side
+            // Determine the type of error
+            signupRes.forEach((err) => {
+                if (err.code === "EMAIL_ALREADY_REGISTERED") {
+                    signupForm.setError("email", {
+                        type: "manual",
+                        message: "This email is already in use"
+                    });
+                }
+
+                if (err.code === "USERNAME_ALREADY_REGISTERED") {
+                    signupForm.setError("username", {
+                        type: "manual",
+                        message: "This username is already in use"
+                    });
+                }
+            });
+
+            return;
+        }
+
+        // Signup successful
+        redirect("/friends");
     }
 
     return (
@@ -108,7 +135,7 @@ export default function SignupPage() {
                                     </FormItem>
                                 )}
                             />
-                            <Button className="mt-4 w-full" type="submit">Signup</Button>
+                            <ButtonLoader loading={signupLoading} className="mt-4 w-full" type="submit" loadingMsg="Signing up">Signup</ButtonLoader>
                             <p className="mt-1 text-sm">Already have an account? <Link className="font-bold underline text-blue-500" to={"/login"}>Login</Link></p>
                         </form>
                     </Form>

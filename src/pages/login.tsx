@@ -1,16 +1,20 @@
-import { Button } from "@/components/ui/button";
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from "@/components/ui/form";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Link } from "react-router-dom";
-import { useContext } from "react";
-import { APIContext } from "@/contexts/apiContext";
+import { Link, useNavigate } from "react-router-dom";
+import { useAuth } from "@/contexts/apiContext";
+import { ButtonLoader } from "@/components/ui/buttonLoader";
+import { useState } from "react";
 
 export default function LoginPage() {
-    const { login } = useContext(APIContext);
+    const { login } = useAuth();
+    const redirect = useNavigate();
+
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null);
 
     const loginFormSchema = z.object({
         email: z.string().email(),
@@ -25,8 +29,28 @@ export default function LoginPage() {
         }
     });
 
-    const onSubmit = (values: z.infer<typeof loginFormSchema>) => {
-        console.log(values);
+    const onSubmit = async (values: z.infer<typeof loginFormSchema>) => {
+        setError(null);
+        setLoading(true);
+        const loginRes = await login(values.email, values.password);
+        setLoading(false);
+
+        if (loginRes) {
+            if (loginRes[0] && loginRes[0].code === "INVALID_CREDENTIALS") {
+                setError("Incorrect email address or password");
+                loginForm.setError("email", {
+                    type: "manual",
+                    message: "",
+                });
+                loginForm.setError("password", {
+                    type: "manual",
+                    message: "",
+                });
+            }
+            return;
+        }
+
+        redirect("/friends");
     }
 
     return (
@@ -37,6 +61,7 @@ export default function LoginPage() {
                     <CardDescription>Enter your credentials to login</CardDescription>
                 </CardHeader>
                 <CardContent>
+                    <p className="text-destructive font-medium mb-2">{error}</p>
                     <Form {...loginForm} >
                         <form onSubmit={loginForm.handleSubmit(onSubmit)} className="w-96">
                             <FormField
@@ -68,7 +93,7 @@ export default function LoginPage() {
                                     </FormItem>
                                 )}
                             />
-                            <Button className="mt-4 w-full" type="submit">Login</Button>
+                            <ButtonLoader loading={loading} loadingMsg="Logging in" className="mt-4 w-full" type="submit">Login</ButtonLoader>
                             <p className="mt-1 text-sm">Don't have an account <Link className="font-bold underline text-blue-500" to={"/signup"}>Signup</Link></p>
                         </form>
                     </Form>
